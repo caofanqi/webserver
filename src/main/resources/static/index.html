@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>前后端项目跨域问题详解</title>
+    <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
+</head>
+
+<body>
+
+<!-- 使用ajax调用后端sayHello请求 -->
+<button id=button_sayHello>sayHello</button>
+<input id="msg_sayHello"/>
+<br>
+
+<!-- 浏览器同源策略仅适用于脚本，对于html标签访问其他源的资源则不限制 -->
+<!--<img src="http://file.caofanqi.cn/2B/2b0.jpeg">-->
+<!--<br>-->
+
+<!-- 使用fetch调用后端sayHello请求 -->
+<button id=button_sayHello_fetch>sayHello_fetch</button>
+<input id="msg_sayHello_fetch"/>
+<br>
+
+<!-- 发送jsonp请求 -->
+<!--<button id=button_jsonp>jsonp</button>-->
+<!--<input id="msg_jsonp"/>-->
+<!--<br>-->
+
+<!-- 发送jsonp请求，后端使用fastjson提供 -->
+<!--<button id=button_sayHello_fastJsonp>sayHello_fastJsonp</button>-->
+<!--<input id="msg_sayHello_fastJsonp"/>-->
+<!--<br>-->
+
+<!-- 携带Cookie请求 -->
+<button id="button_whitCookie">whitCookie</button>
+<input id="msg_whitCookie"/>
+<br>
+
+<!-- 携带获取自定义头请求 -->
+<button id="button_exposeHeaders">exposeHeaders</button>
+<input id="msg_exposeHeaders"/>
+<br>
+
+<!-- 发送非简单请求 PUT类型的请求 -->
+<button id="button_putJson">putJson</button>
+<input id="msg_putJson_name"/>
+<input id="msg_putJson_age"/>
+<br>
+
+<!-- 携带自定义头 -->
+<button id="button_withHeader">withHeader</button>
+<input id="msg_withHeader"/>
+<br>
+
+</body>
+
+<script>
+
+    <!-- 提取统一请求前缀 -->
+    // baseUrl = "http://localhost:9090/api";
+    // baseUrl = "http://apiserver.com/api";
+    baseUrl = "/apiserver";
+
+    $("#button_sayHello").click(function () {
+        $.ajax({
+            url: baseUrl + "/hello",
+            type: "GET",
+            dataType: "json",
+            success: function (res) {
+                $("#msg_sayHello").val(res.data)
+            }
+        })
+    })
+
+
+    $("#button_sayHello_fetch").click(function () {
+        fetch(baseUrl + "/hello").then(res => {
+            return res.json();
+        }).then(dto => {
+            $("#msg_sayHello_fetch").val(dto.data)
+        })
+    })
+
+    $("#button_jsonp").click(function () {
+        $.ajax({
+            url: baseUrl + "/jsonp",
+            // JSONP只支持get方式
+            type: "GET",
+            dataType: "jsonp",
+            // 默认参数为callback，可以修改
+            jsonp: "callback",
+            success: function (res) {
+                $("#msg_jsonp").val(res.data)
+            }
+        })
+    })
+
+    $("#button_sayHello_fastJsonp").click(function () {
+        $.ajax({
+            url: baseUrl + "/hello",
+            type: "GET",
+            dataType: "jsonp",
+            jsonp: "jsonp",
+            success: function (res) {
+                $("#msg_sayHello_fastJsonp").val(res.data)
+            }
+        })
+    })
+
+    $("#button_whitCookie").click(function () {
+        $.ajax({
+            type: "GET",
+            url: baseUrl + "/with/cookie",
+            xhrFields: {
+                // 携带Cookie需指定withCredentials为true
+                withCredentials: true
+            },
+            success: function (res) {
+                console.log(res)
+                $("#msg_whitCookie").val(res.data)
+            }
+        });
+    })
+
+
+    $("#button_exposeHeaders").click(function () {
+        $.ajax({
+            url: baseUrl + "/expose/headers",
+            type: "GET",
+            complete: function (xhr) {
+                // 获取相关Http Response header
+                var responseHeader = xhr.getResponseHeader("X-Custom-Header");
+                console.log(responseHeader)
+                $("#msg_exposeHeaders").val(responseHeader)
+            }
+
+        })
+    })
+
+    $("#button_putJson").click(function () {
+        $.ajax({
+            url: baseUrl + "/put/json",
+            type: "PUT",
+            contentType: "application/json;charset=utf-8",
+            data: JSON.stringify({username: "bobby", age: 18}),
+            success: function (res) {
+                console.log(res)
+                $("#msg_putJson_name").val(res.data.username)
+                $("#msg_putJson_age").val(res.data.age)
+            }
+        })
+    })
+
+
+    $("#button_withHeader").click(function () {
+        $.ajax({
+            type: "GET",
+            url: baseUrl + "/with/header",
+            headers: {
+                "X-Custom-Header1": "AAA"
+            },
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("X-Custom-Header2", "BBB")
+            },
+            success: function (res) {
+                console.log(res)
+                $("#msg_withHeader").val(res.data)
+
+            }
+        });
+    })
+
+
+</script>
+
+</html>
